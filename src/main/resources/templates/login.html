@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+
+<div class="login" style="text-align:center">
+    <div id="container1">
+
+        <div class="login">
+
+            <h3>登入 Login</h3>
+
+            <form th:action="@{/login}" method="post">
+                <input type="text" id="username" name="username" placeholder="帳號" required>
+                <div class="tab"></div>
+                <input type="text" id="password" name="password" placeholder="密碼" required>
+                <div class="tab"></div>
+                <input type="submit" value="登入" class="submit" onclick="location.href=''">
+            </form>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
