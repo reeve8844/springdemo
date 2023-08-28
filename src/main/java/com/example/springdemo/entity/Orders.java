@@ -3,8 +3,10 @@ package com.example.springdemo.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NonNull;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.sql.Date;
+import java.util.Date;
 
 @Entity
 @Data
@@ -20,6 +22,8 @@ public class Orders {
     private Integer total_amount;
     private Integer order_status;
     private Integer payment_status;
+    @CreationTimestamp
     private Date created_at;
+    @UpdateTimestamp
     private Date updated_at;
 }

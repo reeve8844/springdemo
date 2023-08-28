@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Employee</title>
+</head>
+<body>
+<h2>Employee Page</h2>
+<div th:if="${#authentication != null and #authentication.isAuthenticated() and #authorization.expression('hasRole(''ROLE_ADMIN'')')}">
+
+    <!-- Add more buttons for other API operations -->
+    <div class="col-auto">
+        <form action="/employee">
+            <button class="btn btn-primary" type="submit">Employee</button>
+        </form>
+    </div>
+    <div class="col-auto">
+        <form action="/role">
+            <button class="btn btn-primary" type="submit">Role</button>
+        </form>
+    </div>
+    <div class="col-auto">
+        <form action="/product">
+            <button class="btn btn-primary" type="submit">Product</button>
+        </form>
+    </div>
+    <div class="col-auto">
+        <form action="/commodity">
+            <button class="btn btn-primary" type="submit">Commodity</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal for Employee Operations -->
+<div class="modal fade" id="employeeModal" tabindex="-1" aria-labelledby="employeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <!-- Employee Creation Form -->
+                <form id="employeeForm" method="post">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="name" name="name" required placeholder="名稱">
+                    </div>
+                    <div class="mb-3">
+                        <input type="password" class="form-control" id="password" name="password" required placeholder="密碼">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="createEmployeeBtn">新增</button>
+                </form>
+
+
+                <!-- Employee Search Form -->
+
+                <form id="searchForm" class="mt-4">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="searchName" name="name" placeholder="名稱">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="searchBtn">查詢</button>
+                </form>
+
+                <div id="tableContainer" class="mt-4"></div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- creation -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+
+        $("#createEmployeeBtn").click(function () {
+            $.ajax({
+                url: "/employee",
+                method: "POST",
+                data: $("#employeeForm").serialize(),
+                success: function (data) {
+                    // Handle the response data here
+                    console.log(data);
+                },
+                error: function (error) {
+                    // Handle the error here
+                    console.log(error);
+                }
+            });
+        });
+
+        $("#searchBtn").click(function () {
+            var searchName = $("#searchName").val();
+            $.ajax({
+                url: "/search-employee",
+                method: "GET",
+                data: { name: searchName },
+                success: function (data) {
+                    // Clear previous table
+                    $("#tableContainer").empty();
+
+                    // Create a new table
+                    var table = $("<table>").addClass("table table-bordered table-hover");
+                    var thead = $("<thead>").appendTo(table);
+                    var trHead = $("<tr>").appendTo(thead);
+                    $("<th>").text("ID").appendTo(trHead);
+                    $("<th>").text("名稱").appendTo(trHead);
+                    $("<th>").text("密碼").appendTo(trHead);
+                    $("<th>").text("建立時間").appendTo(trHead);
+                    $("<th>").text("更新時間").appendTo(trHead);
+                    $("<th>").text("操作").appendTo(trHead);
+
+                    var tbody = $("<tbody>").appendTo(table);
+                    $.each(data, function (index, employee) {
+                        var tr = $("<tr>").appendTo(tbody);
+                        $("<td>").text(employee.id).appendTo(tr);
+                        $("<td>").text(employee.name).appendTo(tr);
+                        $("<td>").text(employee.password).appendTo(tr);
+                        $("<td>").text(employee.created_at).appendTo(tr);
+                        $("<td>").text(employee.updated_at).appendTo(tr);
+
+                        var tdButtons = $("<td>").appendTo(tr);
+                        $("<button>").text("修改").addClass("btn btn-sm btn-warning").appendTo(tdButtons);
+                        $("<button>").text("刪除").addClass("btn btn-sm btn-danger").appendTo(tdButtons);
+                    });
+
+                    // Append the table to the container
+                    table.appendTo("#tableContainer");
+                },
+                error: function (error) {
+                    // Handle the error here
+                    console.log(error);
+                }
+            });
+        });
+
+    });
+</script>
+</body>
+</html>

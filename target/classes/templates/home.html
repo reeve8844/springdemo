@@ -1,10 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Test</title>
+    <title>Home</title>
 </head>
 <body>
-    <H1>HOME</H1>
+<h2>Home</h2>
+<!--
+<div th:if="${loggedIn}">
+    <p>Hi <span th:text="${username}"></span>!</p>
+</div>
+<nav>
+    <ul>
+        <li th:if="${loggedIn}" class="nav-item"><a th:href="@{/logout}">Logout</a></li>
+        <li th:unless="${loggedIn}" class="nav-item"><a th:href="@{/login}">Login</a></li>
+    </ul>
+</nav>
+-->
+<div th:if="${#authentication != null and #authentication.isAuthenticated()}">
+    <p>Hi <span th:text="${#authentication.principal.username}"></span>!</p>
+    <a href="/logout">Logout</a>
+    <div th:if="${#authorization.expression('hasRole(''ROLE_ADMIN'')')}">
+        <a href="/admin">Admin Page</a>
+    </div>
+</div>
+<div th:unless="${#authentication != null and #authentication.isAuthenticated()}">
+    <a href="/login">Login</a>
+</div>
+
 </body>
 </html>

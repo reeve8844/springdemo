@@ -24,11 +24,14 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     @Autowired
     EmployeeDetailsService employeeDetailsService;
 
+    @Autowired
+    private TokenBlacklist tokenBlacklist;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        System.out.println(request.getHeader("Authorization"));
+        //System.out.println("getHeader: "+request.getHeader("Authorization"));
         // Check if the request has a valid Authorization header
         if (!hasAuthorizationBearer(request)) {
             filterChain.doFilter(request, response);
@@ -45,6 +48,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             //System.out.println("!jwtUtil.validateToken");
             return;
+        }
+
+        if(tokenBlacklist.isBlacklisted(token)){
+            filterChain.doFilter(request, response);
+            System.out.println("token in blacklist");
         }
 
         // Set the Authentication context if the token is valid

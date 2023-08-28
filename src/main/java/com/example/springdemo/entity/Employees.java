@@ -3,15 +3,12 @@ package com.example.springdemo.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NonNull;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serializable;
-import java.sql.Time;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Date;
 
 @Data
 @Entity
@@ -27,13 +24,21 @@ public class Employees implements Serializable {
     private String name;
     @NonNull
     private String password;
-    @Value("0")
+    @Value("false")
     private boolean is_delete;
-    private Time created_at;
-    private Time updated_at;
+    @CreationTimestamp
+    private Date created_at;
+    @UpdateTimestamp
+    private Date updated_at;
 
     public Employees() {
 
+    }
+
+    public Employees(String name, String password, boolean b) {
+        this.name = name;
+        this.password = password;
+        this.is_delete = false;
     }
 
     public int getId() {
@@ -64,19 +69,19 @@ public class Employees implements Serializable {
         this.is_delete = is_delete;
     }
 
-    public Time getCreated_at() {
+    public Date getCreated_at() {
         return created_at;
     }
 
-    public void setCreated_at(Time create_at) {
-        this.created_at = create_at;
+    public void setCreated_at(Date created_at) {
+        this.created_at = created_at;
     }
 
-    public Time getUpdated_at() {
+    public Date getUpdated_at() {
         return updated_at;
     }
 
-    public void setUpdated_at(Time update_at) {
-        this.updated_at = update_at;
+    public void setUpdated_at(Date updated_at) {
+        this.updated_at = updated_at;
     }
 }

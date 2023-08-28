@@ -4,10 +4,15 @@ import com.example.springdemo.details.EmployeeDetails;
 import com.example.springdemo.repository.RoleRepository;
 import com.example.springdemo.security.jwt.AuthEntryPointJwt;
 import com.example.springdemo.security.jwt.JwtTokenFilter;
+import com.example.springdemo.security.jwt.JwtUtils;
 import com.example.springdemo.service.EmployeeDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
@@ -33,8 +38,11 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import javax.sql.DataSource;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
@@ -52,6 +60,8 @@ public class SecurityConfig {
 //    private DataSource dataSource;
     @Autowired
     PasswordEncoder passwordEncoder;
+    @Autowired
+    JwtUtils jwtUtils;
     @Autowired
     JwtTokenFilter jwtTokenFilter;
     @Autowired
@@ -80,24 +90,54 @@ public class SecurityConfig {
 
 
     @Bean
-    @Scope("prototype")
+    //@Scope("prototype")
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
+//        http
+//                .csrf(csrf -> csrf.disable())
 //                .formLogin(form -> form.loginPage("/login").permitAll()
-//                        .successHandler(jsonAuthenticationSuccessHandler())
-//                        .failureHandler(jsonAuthenticationFailureHandler()))
-//                .logout(logout -> logout.logoutUrl("/"))
-                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authEntryPointJwt))
+//                        //.successHandler(jsonAuthenticationSuccessHandler())
+//                        //.failureHandler(jsonAuthenticationFailureHandler())
+//                        .defaultSuccessUrl("/home")
+//                        //.successForwardUrl("/home")
+//                        //.failureForwardUrl("/login")
+//                        .failureUrl("/login")
+//                )
+//                .logout(logout -> logout.logoutUrl("/logout")
+//                        .logoutSuccessUrl("/login")
+//                )
+//                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authEntryPointJwt))
+//
+//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//
+//                .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
+////                        .requestMatchers("/home").permitAll()
+////                        .requestMatchers("/login").permitAll()
+////                        .requestMatchers(HttpMethod.POST, "/**").permitAll()
+////                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+////                        .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+//                        //.requestMatchers("/**").hasAnyAuthority("ROLE_USER")
+//                        .anyRequest().authenticated())
+//                .authenticationProvider(authenticationProvider())
+//                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
+        http
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
-                        .requestMatchers("/login").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        //.requestMatchers("/**").hasAnyAuthority("ROLE_USER")
-                        .anyRequest().authenticated())
-                //.authenticationProvider(authenticationProvider())
+                        .requestMatchers("/login", "/home").permitAll()
+                        .requestMatchers("/logout").hasAnyAuthority("ROLE_USER")
+                        .anyRequest().authenticated()
+                )
+                .authenticationProvider(authenticationProvider())
+                .formLogin(form -> form
+                        .loginPage("/login").permitAll()
+                        //.defaultSuccessUrl("/home")
+                        .successHandler(authenticationSuccessHandler())
+                        .failureUrl("/login")
+                )
+                .logout(logout -> logout
+                        .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+                        .logoutSuccessHandler(logoutSuccessHandler())
+                )
+                .csrf(csrf -> csrf.disable())
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -115,14 +155,38 @@ public class SecurityConfig {
         };
     }
 
-    private AuthenticationSuccessHandler jsonAuthenticationSuccessHandler() {
-        System.out.println("success handle");
-        return (request, response, authentication) -> {
-            response.setStatus(HttpStatus.OK.value());
-            val objectMapper = new ObjectMapper();
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-            response.getWriter().println(objectMapper.writeValueAsString(authentication));
+    @Bean
+    public LogoutSuccessHandler logoutSuccessHandler() {
+        return new LogoutSuccessHandler() {
+            @Override
+            public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response,
+                                        Authentication authentication) throws IOException, ServletException {
+                jwtUtils.invalidateToken(request);
+                response.sendRedirect("/login");
+            }
+        };
+    }
+
+//    private AuthenticationSuccessHandler jsonAuthenticationSuccessHandler() {
+//        System.out.println("success handle");
+//        return (request, response, authentication) -> {
+//            response.setStatus(HttpStatus.OK.value());
+//            val objectMapper = new ObjectMapper();
+//            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+//            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+//            response.getWriter().println(objectMapper.writeValueAsString(authentication));
+//        };
+//    }
+
+    @Bean
+    public AuthenticationSuccessHandler authenticationSuccessHandler() {
+        return new AuthenticationSuccessHandler() {
+            @Override
+            public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+                                                Authentication authentication) throws IOException, ServletException {
+
+                response.sendRedirect("/home");
+            }
         };
     }
 
@@ -147,7 +211,8 @@ public class SecurityConfig {
                     System.out.println("password true");
                     return new UsernamePasswordAuthenticationToken(employeeDetails, password, employeeDetails.getAuthorities());
                 } else {
-                    throw new BadCredentialsException("Authentication failed");
+                    //throw new BadCredentialsException("Authentication failed");
+                    throw new BadCredentialsException("password error");
                 }
             }
 
