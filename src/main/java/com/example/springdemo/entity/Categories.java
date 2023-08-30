@@ -24,4 +24,16 @@ public class Categories {
     private Date created_at;
     @UpdateTimestamp
     private Date updated_at;
+
+    public Categories() {
+    }
+
+    public Categories(String name) {
+        this.name = name;
+    }
+
+    public Categories(String name, Integer parentId) {
+        this.name = name;
+        this.parent_id = parentId;
+    }
 }

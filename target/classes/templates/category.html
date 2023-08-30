@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Category</title>
+</head>
+<body>
+<div th:if="${#authentication != null and #authentication.isAuthenticated() and #authorization.expression('hasRole(''ROLE_ADMIN'')')}">
+
+    <!-- Add more buttons for other API operations -->
+    <div class="col-auto">
+        <form action="/employee">
+            <button class="btn btn-primary" type="submit">Employee</button>
+        </form>
+    </div>
+    <div class="col-auto">
+        <form action="/role">
+            <button class="btn btn-primary" type="submit">Role</button>
+        </form>
+    </div>
+    <div class="col-auto">
+        <form action="/product">
+            <button class="btn btn-primary" type="submit">Product</button>
+        </form>
+    </div>
+    <div class="col-auto">
+        <form action="/category">
+            <button class="btn btn-primary" type="submit">Category</button>
+        </form>
+    </div>
+</div>
+
+<h2>Category</h2>
+
+<!-- Category Modal -->
+<div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <!-- Employee Creation Form -->
+                <form id="categoryForm" method="post">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="name" name="name" required placeholder="名稱">
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-select" id="category" name="category">
+                            <option value="">選擇分類</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="createCategoryBtn">新增</button>
+                </form>
+
+
+                <!-- Employee Search Form -->
+
+                <form id="searchForm" class="mt-4">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="searchName" name="name" placeholder="名稱">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="searchBtn">查詢</button>
+                </form>
+
+                <div id="tableContainer" class="mt-4"></div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    function populateCategoryDropdown(data) {
+        var categoryDropdown = $("#category");
+        categoryDropdown.empty();
+
+        var defaultOption = $("<option>").attr("value", "").text("選擇分類");
+        categoryDropdown.append(defaultOption);
+
+        $.each(data, function (index, category) {
+            var option = $("<option>").attr("value", category.category_id).text(category.name);
+            categoryDropdown.append(option);
+        });
+    }
+
+    $(document).ready(function () {
+
+        $("#createCategoryBtn").click(function () {
+            var formData = {
+                name: $("#name").val(),
+                parent_id: $("#category").val() || null
+            };
+            $.ajax({
+                url: "/category",
+                method: "POST",
+                data: formData,
+                success: function (data) {
+                    console.log(data);
+                    initDropList();
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        });
+
+        $("#searchBtn").click(function () {
+            searchCategory();
+        });
+
+        function searchCategory() {
+        var searchName = $("#searchName").val();
+            $.ajax({
+                url: "/search-category",
+                method: "GET",
+                data: { name: searchName },
+                success: function (data) {
+                    displayCategoryTable(data);
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+
+        function displayCategoryTable(data) {
+            $("#tableContainer").empty();
+
+            var table = $("<table>").addClass("table table-bordered table-hover");
+            var thead = $("<thead>").appendTo(table);
+            var trHead = $("<tr>").appendTo(thead);
+
+            $("<th>").text("ID").appendTo(trHead);
+            $("<th>").text("纇別名稱").appendTo(trHead);
+            $("<th>").text("父類別名稱").appendTo(trHead);
+            $("<th>").text("建立時間").appendTo(trHead);
+            $("<th>").text("更新時間").appendTo(trHead);
+            $("<th>").text("操作").appendTo(trHead);
+
+            var tbody = $("<tbody>").appendTo(table);
+
+            $.each(data, function (index, category) {
+                var tr = $("<tr>").appendTo(tbody);
+                $("<td>").text(category.category_id).appendTo(tr);
+
+                var nameInput = $("<input>").attr("type", "text")
+                .attr("id", "nameInput_" + category.category_id).val(category.name);
+                $("<td>").append(nameInput).appendTo(tr);
+
+                var roleDropdownElement = $("<select>").addClass("form-select");
+                roleDropdownElement.attr("id", "categorySelect_" + category.category_id)
+                    .attr("data-category-id", category.category_id);
+                $("<td>").append(roleDropdownElement).appendTo(tr);
+
+                $("<td>").text(category.created_at).appendTo(tr);
+                $("<td>").text(category.updated_at).appendTo(tr);
+
+                var tdButtons = $("<td>").appendTo(tr);
+
+                $("<button>").text("修改").addClass("btn btn-sm btn-warning edit-btn")
+                    .attr("data-category-id", category.category_id).appendTo(tdButtons);
+                $("<button>").text("刪除").addClass("btn btn-sm btn-danger delete-btn")
+                    .attr("data-category-id", category.category_id).appendTo(tdButtons);
+                });
+
+            table.appendTo("#tableContainer");
+        }
+
+        function initDropList(){
+            $.ajax({
+                url: "/search-category",
+                method: "GET",
+                success: function (data) {
+                    populateCategoryDropdown(data);
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+
+        initDropList();
+
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Product</title>
+</head>
+<body>
+<div th:if="${#authentication != null and #authentication.isAuthenticated() and #authorization.expression('hasRole(''ROLE_ADMIN'')')}">
+
+    <!-- Add more buttons for other API operations -->
+    <div class="col-auto">
+        <form action="/employee">
+            <button class="btn btn-primary" type="submit">Employee</button>
+        </form>
+    </div>
+    <div class="col-auto">
+        <form action="/role">
+            <button class="btn btn-primary" type="submit">Role</button>
+        </form>
+    </div>
+    <div class="col-auto">
+        <form action="/product">
+            <button class="btn btn-primary" type="submit">Product</button>
+        </form>
+    </div>
+    <div class="col-auto">
+        <form action="/category">
+            <button class="btn btn-primary" type="submit">Category</button>
+        </form>
+    </div>
+</div>
+
+<h2>Product</h2>
+
+</body>
+</html>

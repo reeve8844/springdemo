@@ -29,4 +29,9 @@ public class Employee_Roles {
 
     public Employee_Roles() {
     }
+
+    public Employee_Roles(Employees employees, Roles roles) {
+        this.employees = employees;
+        this.roles = roles;
+    }
 }

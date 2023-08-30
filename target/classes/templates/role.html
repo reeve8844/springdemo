@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Roles</title>
+</head>
+<body>
+<div th:if="${#authentication != null and #authentication.isAuthenticated() and #authorization.expression('hasRole(''ROLE_ADMIN'')')}">
+
+    <!-- Add more buttons for other API operations -->
+    <div class="col-auto">
+        <form action="/employee">
+            <button class="btn btn-primary" type="submit">Employee</button>
+        </form>
+    </div>
+    <div class="col-auto">
+        <form action="/role">
+            <button class="btn btn-primary" type="submit">Role</button>
+        </form>
+    </div>
+    <div class="col-auto">
+        <form action="/product">
+            <button class="btn btn-primary" type="submit">Product</button>
+        </form>
+    </div>
+    <div class="col-auto">
+        <form action="/category">
+            <button class="btn btn-primary" type="submit">Category</button>
+        </form>
+    </div>
+</div>
+
+<h2>Role</h2>
+
+<!-- Role Creation Form -->
+<form id="roleForm" method="post">
+    <div class="mb-3">
+        <input type="text" class="form-control" id="roleName" name="name" required placeholder="角色名稱">
+    </div>
+    <button type="button" class="btn btn-primary" id="createRoleBtn">新增</button>
+</form>
+
+<!-- Role Search Form -->
+<form id="searchForm" class="mt-4">
+    <button type="button" class="btn btn-primary" id="searchBtn">全部查詢</button>
+</form>
+
+<!-- Role List Table -->
+<div id="roleTableContainer" class="mt-4"></div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+
+        // Create Role
+        $("#createRoleBtn").click(function () {
+            $.ajax({
+                url: "/role",
+                method: "POST",
+                data: $("#roleForm").serialize(),
+                success: function (data) {
+                    // Handle the response data here
+                    console.log(data);
+                    // Reload the role list after creation
+                    loadRoleList();
+                },
+                error: function (error) {
+                    // Handle the error here
+                    console.log(error);
+                }
+            });
+        });
+
+        // Load Role List
+        function loadRoleList() {
+            $.ajax({
+                url: "/search-role",
+                method: "GET",
+                success: function (data) {
+                    // Clear previous table
+                    $("#roleTableContainer").empty();
+
+                    // Create a new table
+                    var table = $("<table>").addClass("table table-bordered table-hover");
+                    var thead = $("<thead>").appendTo(table);
+                    var trHead = $("<tr>").appendTo(thead);
+                    $("<th>").text("ID").appendTo(trHead);
+                    $("<th>").text("角色名稱").appendTo(trHead);
+                    $("<th>").text("操作").appendTo(trHead);
+
+                    var tbody = $("<tbody>").appendTo(table);
+                    $.each(data, function (index, role) {
+                        var tr = $("<tr>").appendTo(tbody);
+                        $("<td>").text(role.id).appendTo(tr);
+
+                        var roleNameCell = $("<td>").addClass("role-name").appendTo(tr);
+                        $("<input>").attr("type", "text").val(role.name).appendTo(roleNameCell);
+
+                        var tdButtons = $("<td>").appendTo(tr);
+                        $("<button>").text("修改").addClass("btn btn-sm btn-warning edit-role-btn").appendTo(tdButtons);
+                        $("<button>").text("刪除").addClass("btn btn-sm btn-danger delete-role-btn").appendTo(tdButtons);
+                    });
+
+                    // Append the table to the container
+                    table.appendTo("#roleTableContainer");
+                },
+                error: function (error) {
+                    // Handle the error here
+                    console.log(error);
+                }
+            });
+        }
+
+        // Search Role
+        $("#searchBtn").click(function () {
+            var searchName = $("#searchName").val();
+            $.ajax({
+                url: "/search-role",
+                method: "GET",
+                success: function (data) {
+                    // Clear previous table
+                    $("#roleTableContainer").empty();
+
+                    // Load role list with search results
+                    loadRoleList();
+                },
+                error: function (error) {
+                    // Handle the error here
+                    console.log(error);
+                }
+            });
+        });
+
+        // Edit Role Functionality
+        $(document).on("click", ".edit-role-btn", function () {
+            var tr = $(this).closest("tr");
+            var roleId = tr.find("td:first-child").text();
+            var roleName = tr.find(".role-name input").val();
+
+            // Make an AJAX request to update the role
+            $.ajax({
+                url: "/role/" + roleId,
+                method: "PUT",
+                data: { name: roleName },
+                success: function (data) {
+                    // Reload the role list after updating
+                    loadRoleList();
+                },
+                error: function (error) {
+                    // Handle the error here
+                    console.log(error);
+                }
+            });
+        });
+
+
+        // Delete Role Functionality
+        $(document).on("click", ".delete-role-btn", function () {
+            var tr = $(this).closest("tr");
+            var roleId = tr.find("td:first-child").text();
+
+            // Make an AJAX request to delete the role
+            $.ajax({
+                url: "/role/" + roleId,
+                method: "DELETE",
+                success: function () {
+                    // Reload the role list after deletion
+                    loadRoleList();
+                },
+                error: function (error) {
+                    // Handle the error here
+                    console.log(error);
+                }
+            });
+        });
+
+
+        // Load initial role list
+        //loadRoleList();
+    });
+</script>
+</body>
+</html>

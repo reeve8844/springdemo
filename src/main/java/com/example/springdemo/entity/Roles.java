@@ -28,6 +28,10 @@ public class Roles {
     public Roles() {
     }
 
+    public Roles(String name) {
+        this.name = name;
+    }
+
     public int getId() {
         return id;
     }

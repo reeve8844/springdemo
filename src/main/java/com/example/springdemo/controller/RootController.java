@@ -28,6 +28,17 @@ public class RootController {
         return "employee";
     }
 
+    @RequestMapping("/role")
+    public String role() {
+        return "role";
+    }
+
+    @RequestMapping("/product")
+    public String product() { return  "product"; }
+
+    @RequestMapping("/category")
+    public String category() { return "category"; }
+
 //    @RequestMapping("/login")
 //    public String login(@RequestParam(value="name", required=false) String name,
 //                        @RequestParam(value="password", required=false) String password,

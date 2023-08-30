@@ -27,8 +27,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.jdbc.JdbcDaoImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -92,33 +90,6 @@ public class SecurityConfig {
     @Bean
     //@Scope("prototype")
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf(csrf -> csrf.disable())
-//                .formLogin(form -> form.loginPage("/login").permitAll()
-//                        //.successHandler(jsonAuthenticationSuccessHandler())
-//                        //.failureHandler(jsonAuthenticationFailureHandler())
-//                        .defaultSuccessUrl("/home")
-//                        //.successForwardUrl("/home")
-//                        //.failureForwardUrl("/login")
-//                        .failureUrl("/login")
-//                )
-//                .logout(logout -> logout.logoutUrl("/logout")
-//                        .logoutSuccessUrl("/login")
-//                )
-//                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authEntryPointJwt))
-//
-//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//
-//                .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
-////                        .requestMatchers("/home").permitAll()
-////                        .requestMatchers("/login").permitAll()
-////                        .requestMatchers(HttpMethod.POST, "/**").permitAll()
-////                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-////                        .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-//                        //.requestMatchers("/**").hasAnyAuthority("ROLE_USER")
-//                        .anyRequest().authenticated())
-//                .authenticationProvider(authenticationProvider())
-//                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         http
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests

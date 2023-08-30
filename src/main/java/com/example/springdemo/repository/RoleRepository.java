@@ -13,9 +13,9 @@ public interface RoleRepository extends JpaRepository<Roles, Integer> {
     Optional<Roles> findById(Roles role_id);
 
     @Query(nativeQuery = true, value = "select Roles.id, Roles.name, Roles.created_at, Roles.updated_at from Roles " +
-            "join Employee_Roles on Employee_Roles.role_id = Roles.id " +
-            "join Employees on Employees.id = Employee_Roles.employee_id " +
-            "where Employees.name = :name")
-    //@Query(nativeQuery = true, value = "select Employees.id from Employees where Employees.name = :name")
-    Optional<Roles>findRoleByName(@Param("name") String name);
+            "join Employee_Roles on Roles.id = Employee_Roles.role_id " +
+            "join Employees on Employee_Roles.employee_id = Employees.id " +
+            "where Employees.name = :name or :name is null or :name = '' ")
+    Optional<Roles>findByName(@Param("name") String name);
+    Optional<Roles>findById(Integer id);
 }

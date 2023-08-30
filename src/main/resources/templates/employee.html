@@ -5,7 +5,6 @@
     <title>Employee</title>
 </head>
 <body>
-<h2>Employee Page</h2>
 <div th:if="${#authentication != null and #authentication.isAuthenticated() and #authorization.expression('hasRole(''ROLE_ADMIN'')')}">
 
     <!-- Add more buttons for other API operations -->
@@ -25,11 +24,13 @@
         </form>
     </div>
     <div class="col-auto">
-        <form action="/commodity">
-            <button class="btn btn-primary" type="submit">Commodity</button>
+        <form action="/category">
+            <button class="btn btn-primary" type="submit">Category</button>
         </form>
     </div>
 </div>
+
+<h2>Employee</h2>
 
 <!-- Modal for Employee Operations -->
 <div class="modal fade" id="employeeModal" tabindex="-1" aria-labelledby="employeeModalLabel" aria-hidden="true">
@@ -43,6 +44,11 @@
                     </div>
                     <div class="mb-3">
                         <input type="password" class="form-control" id="password" name="password" required placeholder="密碼">
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-select" id="role" name="role">
+                            <option value="">選擇角色</option>
+                        </select>
                     </div>
                     <button type="button" class="btn btn-primary" id="createEmployeeBtn">新增</button>
                 </form>
@@ -68,68 +74,201 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
+    function loadRoleListForDropdown(dropdownId) {
+        $.ajax({
+            url: "/roles-list",
+            method: "GET",
+            success: function (data) {
+                // Populate the dropdown with roles
+                var roleDropdown = $("#" + dropdownId);
+                roleDropdown.empty();
+                roleDropdown.append($('<option value="">選擇角色</option>'));
+                $.each(data, function (index, role) {
+                    roleDropdown.append($('<option value="' + role.id + '">' + role.name + '</option>'));
+                });
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    }
+
+    function loadEmployeeTable(employeesWithRoles) {
+        // Clear previous table
+        $("#tableContainer").empty();
+
+        // Create a new table
+        var table = $("<table>").addClass("table table-bordered table-hover");
+        var thead = $("<thead>").appendTo(table);
+        var trHead = $("<tr>").appendTo(thead);
+        $("<th>").text("ID").appendTo(trHead);
+        $("<th>").text("名稱").appendTo(trHead);
+        $("<th>").text("密碼").appendTo(trHead);
+        $("<th>").text("角色").appendTo(trHead);
+        $("<th>").text("建立時間").appendTo(trHead);
+        $("<th>").text("更新時間").appendTo(trHead);
+        $("<th>").text("操作").appendTo(trHead);
+
+        var tbody = $("<tbody>").appendTo(table);
+        $.each(employeesWithRoles, function (index, employeeWithRole) {
+            var tr = $("<tr>").appendTo(tbody);
+            $("<td>").text(employeeWithRole.employee.id).appendTo(tr);
+
+            var nameInput = $("<input>").attr("type", "text")
+                .attr("id", "nameInput_" + employeeWithRole.employee.id).val(employeeWithRole.employee.name);
+            var passwordInput = $("<input>").attr("type", "text")
+                .attr("id", "passwordInput_" + employeeWithRole.employee.id).val(employeeWithRole.employee.password);
+            $("<td>").append(nameInput).appendTo(tr);
+            $("<td>").append(passwordInput).appendTo(tr);
+
+            // Create a role dropdown
+            var roleDropdownElement = $("<select>").addClass("form-select");
+            roleDropdownElement.attr("id", "roleSelect_" + employeeWithRole.employee.id)
+                .attr("data-employee-id", employeeWithRole.employee.id);
+
+            loadRoleListForDropdown("roleSelect_" + employeeWithRole.employee.id);
+
+            // Set the selected role for the dropdown
+            //roleDropdownElement.val(employeeWithRole.role != null ? employeeWithRole.role.id : "").change();
+            if ( employeeWithRole.role !=null) {
+                console.log("role :", (employeeWithRole.role != null ? employeeWithRole.role.id : ""));
+                $('#roleSelect_' + employeeWithRole.employee.id + ' option[value="' + employeeWithRole.role.id + '"]').prop("selected", "selected");
+            }
+
+            // Append the role dropdown to the table cell
+            $("<td>").append(roleDropdownElement).appendTo(tr);
+            console.log("Setting selected role:", (employeeWithRole.role != null ? employeeWithRole.role.id : ""));
+
+            $("<td>").text(employeeWithRole.employee.created_at).appendTo(tr);
+            $("<td>").text(employeeWithRole.employee.updated_at).appendTo(tr);
+
+            var tdButtons = $("<td>").appendTo(tr);
+
+            $("<button>").text("修改").addClass("btn btn-sm btn-warning edit-btn")
+                .attr("data-employee-id", employeeWithRole.employee.id).appendTo(tdButtons);
+            $("<button>").text("刪除").addClass("btn btn-sm btn-danger delete-btn")
+                .attr("data-employee-id", employeeWithRole.employee.id).appendTo(tdButtons);
+        });
+        // Append the table to the container
+        table.appendTo("#tableContainer");
+    }
+
     $(document).ready(function () {
 
         $("#createEmployeeBtn").click(function () {
-            $.ajax({
-                url: "/employee",
-                method: "POST",
-                data: $("#employeeForm").serialize(),
-                success: function (data) {
-                    // Handle the response data here
-                    console.log(data);
-                },
-                error: function (error) {
-                    // Handle the error here
-                    console.log(error);
-                }
-            });
+            var employeeData = {
+                name: $("#name").val(),
+                password: $("#password").val()
+            };
+
+            var selectedRoleId = $("#role").val(); // Get selected role ID
+            if (selectedRoleId !== "") {
+
+                $.ajax({
+                    url: "/employee_role",
+                    method: "POST",
+                    data: JSON.stringify({
+                        employeeData: employeeData,
+                        selectedRoleId: parseInt(selectedRoleId)
+                    }),
+                    contentType: "application/json",
+                    success: function (data) {
+                        // Handle the response data here
+                        console.log(data);
+                        loadEmployeeTable(data);
+                    },
+                    error: function (error) {
+                        // Handle the error here
+                        console.log(error);
+                    }
+                });
+            }
+            else {
+                $.ajax({
+                    url: "/employee",
+                    method: "POST",
+                    data: employeeData,
+                    success: function (data) {
+                        // Handle the response data here
+                        console.log(data);
+                        loadEmployeeTable(data);
+                    },
+                    error: function (error) {
+                        // Handle the error here
+                        console.log(error);
+                    }
+                });
+            }
         });
 
         $("#searchBtn").click(function () {
-            var searchName = $("#searchName").val();
-            $.ajax({
-                url: "/search-employee",
-                method: "GET",
-                data: { name: searchName },
-                success: function (data) {
-                    // Clear previous table
-                    $("#tableContainer").empty();
-
-                    // Create a new table
-                    var table = $("<table>").addClass("table table-bordered table-hover");
-                    var thead = $("<thead>").appendTo(table);
-                    var trHead = $("<tr>").appendTo(thead);
-                    $("<th>").text("ID").appendTo(trHead);
-                    $("<th>").text("名稱").appendTo(trHead);
-                    $("<th>").text("密碼").appendTo(trHead);
-                    $("<th>").text("建立時間").appendTo(trHead);
-                    $("<th>").text("更新時間").appendTo(trHead);
-                    $("<th>").text("操作").appendTo(trHead);
-
-                    var tbody = $("<tbody>").appendTo(table);
-                    $.each(data, function (index, employee) {
-                        var tr = $("<tr>").appendTo(tbody);
-                        $("<td>").text(employee.id).appendTo(tr);
-                        $("<td>").text(employee.name).appendTo(tr);
-                        $("<td>").text(employee.password).appendTo(tr);
-                        $("<td>").text(employee.created_at).appendTo(tr);
-                        $("<td>").text(employee.updated_at).appendTo(tr);
-
-                        var tdButtons = $("<td>").appendTo(tr);
-                        $("<button>").text("修改").addClass("btn btn-sm btn-warning").appendTo(tdButtons);
-                        $("<button>").text("刪除").addClass("btn btn-sm btn-danger").appendTo(tdButtons);
-                    });
-
-                    // Append the table to the container
-                    table.appendTo("#tableContainer");
-                },
-                error: function (error) {
-                    // Handle the error here
-                    console.log(error);
-                }
-            });
+        var searchName = $("#searchName").val();
+        $.ajax({
+            url: "/search-employee",
+            method: "GET",
+            data: { name: searchName },
+            success: function (data) {
+                // Load employee table using the defined function
+                loadEmployeeTable(data);
+                //loadRoleListForDropdown();
+            },
+            error: function (error) {
+                // Handle the error here
+                console.log(error);
+            }
         });
+    });
+
+    $(document).on("click", ".edit-btn", function () {
+        var employeeId = $(this).data("employee-id");
+
+        var name = $("#nameInput_" + employeeId).val();
+        var password = $("#passwordInput_" + employeeId).val();
+        var selectedRoleId = $("#roleSelect_" + employeeId).val();
+
+        // Send the updated data to the server using the PUT request
+        $.ajax({
+            url: "/employee/" + employeeId,
+            method: "PUT",
+            data: JSON.stringify({
+                name: name,
+                password: password,
+                selectedRoleId: parseInt(selectedRoleId)
+            }),
+            contentType: "application/json",
+            success: function (data) {
+                // Handle the response data here
+                console.log(data);
+                $("#searchBtn").trigger("click");
+            },
+            error: function (error) {
+                // Handle the error here
+                console.log(error);
+            }
+        });
+    });
+
+    $(document).on("click", ".delete-btn", function () {
+        var employeeId = $(this).data("employee-id");
+
+        $.ajax({
+            url: "/employee/" + employeeId,
+            method: "DELETE",
+            success: function (data) {
+                // Handle success, update UI or perform actions
+                console.log("Employee deleted");
+                loadEmployeeTable(data);
+                // You might want to update the UI to reflect the change in status
+            },
+            error: function (error) {
+               // Handle the error here
+               console.log(error);
+            }
+        });
+    });
+
+    // Load role list for the dropdown when the page loads
+    loadRoleListForDropdown("role")
 
     });
 </script>
