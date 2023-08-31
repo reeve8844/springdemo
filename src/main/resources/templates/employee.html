@@ -43,7 +43,7 @@
                         <input type="text" class="form-control" id="name" name="name" required placeholder="名稱">
                     </div>
                     <div class="mb-3">
-                        <input type="password" class="form-control" id="password" name="password" required placeholder="密碼">
+                        <input type="text" class="form-control" id="password" name="password" required placeholder="密碼">
                     </div>
                     <div class="mb-3">
                         <select class="form-select" id="role" name="role">
@@ -74,86 +74,94 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-    function loadRoleListForDropdown(dropdownId) {
-        $.ajax({
-            url: "/roles-list",
-            method: "GET",
-            success: function (data) {
-                // Populate the dropdown with roles
-                var roleDropdown = $("#" + dropdownId);
-                roleDropdown.empty();
-                roleDropdown.append($('<option value="">選擇角色</option>'));
-                $.each(data, function (index, role) {
-                    roleDropdown.append($('<option value="' + role.id + '">' + role.name + '</option>'));
-                });
-            },
-            error: function (error) {
-                console.log(error);
-            }
-        });
-    }
-
-    function loadEmployeeTable(employeesWithRoles) {
-        // Clear previous table
-        $("#tableContainer").empty();
-
-        // Create a new table
-        var table = $("<table>").addClass("table table-bordered table-hover");
-        var thead = $("<thead>").appendTo(table);
-        var trHead = $("<tr>").appendTo(thead);
-        $("<th>").text("ID").appendTo(trHead);
-        $("<th>").text("名稱").appendTo(trHead);
-        $("<th>").text("密碼").appendTo(trHead);
-        $("<th>").text("角色").appendTo(trHead);
-        $("<th>").text("建立時間").appendTo(trHead);
-        $("<th>").text("更新時間").appendTo(trHead);
-        $("<th>").text("操作").appendTo(trHead);
-
-        var tbody = $("<tbody>").appendTo(table);
-        $.each(employeesWithRoles, function (index, employeeWithRole) {
-            var tr = $("<tr>").appendTo(tbody);
-            $("<td>").text(employeeWithRole.employee.id).appendTo(tr);
-
-            var nameInput = $("<input>").attr("type", "text")
-                .attr("id", "nameInput_" + employeeWithRole.employee.id).val(employeeWithRole.employee.name);
-            var passwordInput = $("<input>").attr("type", "text")
-                .attr("id", "passwordInput_" + employeeWithRole.employee.id).val(employeeWithRole.employee.password);
-            $("<td>").append(nameInput).appendTo(tr);
-            $("<td>").append(passwordInput).appendTo(tr);
-
-            // Create a role dropdown
-            var roleDropdownElement = $("<select>").addClass("form-select");
-            roleDropdownElement.attr("id", "roleSelect_" + employeeWithRole.employee.id)
-                .attr("data-employee-id", employeeWithRole.employee.id);
-
-            loadRoleListForDropdown("roleSelect_" + employeeWithRole.employee.id);
-
-            // Set the selected role for the dropdown
-            //roleDropdownElement.val(employeeWithRole.role != null ? employeeWithRole.role.id : "").change();
-            if ( employeeWithRole.role !=null) {
-                console.log("role :", (employeeWithRole.role != null ? employeeWithRole.role.id : ""));
-                $('#roleSelect_' + employeeWithRole.employee.id + ' option[value="' + employeeWithRole.role.id + '"]').prop("selected", "selected");
-            }
-
-            // Append the role dropdown to the table cell
-            $("<td>").append(roleDropdownElement).appendTo(tr);
-            console.log("Setting selected role:", (employeeWithRole.role != null ? employeeWithRole.role.id : ""));
-
-            $("<td>").text(employeeWithRole.employee.created_at).appendTo(tr);
-            $("<td>").text(employeeWithRole.employee.updated_at).appendTo(tr);
-
-            var tdButtons = $("<td>").appendTo(tr);
-
-            $("<button>").text("修改").addClass("btn btn-sm btn-warning edit-btn")
-                .attr("data-employee-id", employeeWithRole.employee.id).appendTo(tdButtons);
-            $("<button>").text("刪除").addClass("btn btn-sm btn-danger delete-btn")
-                .attr("data-employee-id", employeeWithRole.employee.id).appendTo(tdButtons);
-        });
-        // Append the table to the container
-        table.appendTo("#tableContainer");
-    }
-
     $(document).ready(function () {
+
+        function loadRoleListForDropdown(dropdownId) {
+            $.ajax({
+                url: "/roles-list",
+                method: "GET",
+                success: function (data) {
+                    // Populate the dropdown with roles
+                    var roleDropdown = $("#" + dropdownId);
+                    roleDropdown.empty();
+                    roleDropdown.append($('<option value="">選擇角色</option>'));
+                    $.each(data, function (index, role) {
+                        roleDropdown.append($('<option value="' + role.id + '">' + role.name + '</option>'));
+                    });
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+
+        function loadEmployeeTable(employeesWithRoles) {
+            // Clear previous table
+            $("#tableContainer").empty();
+
+            // Create a new table
+            var table = $("<table>").addClass("table table-bordered table-hover");
+            var thead = $("<thead>").appendTo(table);
+            var trHead = $("<tr>").appendTo(thead);
+            $("<th>").text("ID").appendTo(trHead);
+            $("<th>").text("名稱").appendTo(trHead);
+            $("<th>").text("密碼").appendTo(trHead);
+            $("<th>").text("目前角色").appendTo(trHead);
+            $("<th>").text("選擇角色").appendTo(trHead);
+            $("<th>").text("建立時間").appendTo(trHead);
+            $("<th>").text("更新時間").appendTo(trHead);
+            $("<th>").text("操作").appendTo(trHead);
+
+            var tbody = $("<tbody>").appendTo(table);
+            $.each(employeesWithRoles, function (index, employeeWithRole) {
+                var tr = $("<tr>").appendTo(tbody);
+                $("<td>").text(employeeWithRole.employee.id).appendTo(tr);
+
+                var nameInput = $("<input>").attr("type", "text")
+                    .attr("id", "nameInput_" + employeeWithRole.employee.id).val(employeeWithRole.employee.name);
+                var passwordInput = $("<input>").attr("type", "text")
+                    .attr("id", "passwordInput_" + employeeWithRole.employee.id).val(employeeWithRole.employee.password);
+                $("<td>").append(nameInput).appendTo(tr);
+                $("<td>").append(passwordInput).appendTo(tr);
+
+                $("<td>").text(employeeWithRole.role != null ? employeeWithRole.role.name : "").appendTo(tr);
+
+                // Create a role dropdown
+                var roleDropdownElement = $("<select>").addClass("form-select");
+                roleDropdownElement.attr("id", "roleSelect_" + employeeWithRole.employee.id)
+                    .attr("data-employee-id", employeeWithRole.employee.id);
+
+                loadRoleListForDropdown("roleSelect_" + employeeWithRole.employee.id);
+
+                // Set the selected role for the dropdown
+                //roleDropdownElement.val(employeeWithRole.role != null ? employeeWithRole.role.id : "").change();
+                if ( employeeWithRole.role !=null) {
+                    console.log("role :", (employeeWithRole.role != null ? employeeWithRole.role.id : ""));
+                    //$('#roleSelect_' + employeeWithRole.employee.id + ' option[value="' + employeeWithRole.role.id + '"]').prop("selected", "selected");
+                    roleDropdownElement.find("option").removeAttr("selected")
+                        .filter("[value=" + employeeWithRole.role.id + "]")
+                        .prop("selected", true);
+                    roleDropdownElement.val(employeeWithRole.role.id).change();
+                }
+
+
+                // Append the role dropdown to the table cell
+                $("<td>").append(roleDropdownElement).appendTo(tr);
+                console.log("Setting selected role:", (employeeWithRole.role != null ? employeeWithRole.role.id : ""));
+
+                $("<td>").text(employeeWithRole.employee.created_at).appendTo(tr);
+                $("<td>").text(employeeWithRole.employee.updated_at).appendTo(tr);
+
+                var tdButtons = $("<td>").appendTo(tr);
+
+                $("<button>").text("修改").addClass("btn btn-sm btn-warning edit-btn")
+                    .attr("data-employee-id", employeeWithRole.employee.id).appendTo(tdButtons);
+                $("<button>").text("刪除").addClass("btn btn-sm btn-danger delete-btn")
+                    .attr("data-employee-id", employeeWithRole.employee.id).appendTo(tdButtons);
+            });
+            // Append the table to the container
+            table.appendTo("#tableContainer");
+        }
 
         $("#createEmployeeBtn").click(function () {
             var employeeData = {

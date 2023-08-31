@@ -70,20 +70,26 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-    function populateCategoryDropdown(data) {
-        var categoryDropdown = $("#category");
-        categoryDropdown.empty();
-
-        var defaultOption = $("<option>").attr("value", "").text("選擇分類");
-        categoryDropdown.append(defaultOption);
-
-        $.each(data, function (index, category) {
-            var option = $("<option>").attr("value", category.category_id).text(category.name);
-            categoryDropdown.append(option);
-        });
-    }
-
     $(document).ready(function () {
+
+        function loadCategoryList(dropdownId) {
+            $.ajax({
+                url: "/category-list",
+                method: "GET",
+                success: function (data) {
+                    // Populate the dropdown with category
+                    var categoryDropdown = $("#" + dropdownId);
+                    categoryDropdown.empty();
+                    categoryDropdown.append($('<option value="">選擇類別</option>'));
+                    $.each(data, function (index, category) {
+                        categoryDropdown.append($('<option value="' + category.category_id + '">' + category.name + '</option>'));
+                    });
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
 
         $("#createCategoryBtn").click(function () {
             var formData = {
@@ -96,16 +102,13 @@
                 data: formData,
                 success: function (data) {
                     console.log(data);
-                    initDropList();
+                    loadCategoryList("category");
+                    searchCategory();ㄤ
                 },
                 error: function (error) {
                     console.log(error);
                 }
             });
-        });
-
-        $("#searchBtn").click(function () {
-            searchCategory();
         });
 
         function searchCategory() {
@@ -123,6 +126,10 @@
             });
         }
 
+        $("#searchBtn").click(function () {
+            searchCategory();
+        });
+
         function displayCategoryTable(data) {
             $("#tableContainer").empty();
 
@@ -132,7 +139,8 @@
 
             $("<th>").text("ID").appendTo(trHead);
             $("<th>").text("纇別名稱").appendTo(trHead);
-            $("<th>").text("父類別名稱").appendTo(trHead);
+            $("<th>").text("父類別ID").appendTo(trHead);
+            $("<th>").text("選擇父類別").appendTo(trHead);
             $("<th>").text("建立時間").appendTo(trHead);
             $("<th>").text("更新時間").appendTo(trHead);
             $("<th>").text("操作").appendTo(trHead);
@@ -147,9 +155,14 @@
                 .attr("id", "nameInput_" + category.category_id).val(category.name);
                 $("<td>").append(nameInput).appendTo(tr);
 
+                $("<td>").text(category.parent_id != null ? category.parent_id : "").appendTo(tr);
+
                 var roleDropdownElement = $("<select>").addClass("form-select");
                 roleDropdownElement.attr("id", "categorySelect_" + category.category_id)
                     .attr("data-category-id", category.category_id);
+
+                loadCategoryList("categorySelect_" + category.category_id);
+
                 $("<td>").append(roleDropdownElement).appendTo(tr);
 
                 $("<td>").text(category.created_at).appendTo(tr);
@@ -166,20 +179,55 @@
             table.appendTo("#tableContainer");
         }
 
-        function initDropList(){
+        // Edit Category Functionality
+        $(document).on("click", ".edit-btn", function () {
+            var tr = $(this).closest("tr");
+            var c_id = tr.find("td:first-child").text();
+            var name = $("#nameInput_" + c_id).val();
+            var p_id = $("#categorySelect_" + c_id).val();
+            console.log(p_id);
+
+            // Make an AJAX request to update the role
             $.ajax({
-                url: "/search-category",
-                method: "GET",
+                url: "/category/" + c_id,
+                method: "PUT",
+                data: {
+                    name: name,
+                    parent_id: parseInt(p_id)
+                },
                 success: function (data) {
-                    populateCategoryDropdown(data);
+                    // Reload list after updating
+                    loadCategoryList("category");
                 },
                 error: function (error) {
+                    // Handle the error here
                     console.log(error);
                 }
             });
-        }
+        });
 
-        initDropList();
+        // Delete Category Functionality
+        $(document).on("click", ".delete-btn", function () {
+            var tr = $(this).closest("tr");
+            var category_id = tr.find("td:first-child").text();
+
+            // Make an AJAX request to delete the role
+            $.ajax({
+                url: "/category/" + category_id,
+                method: "DELETE",
+                success: function () {
+                    // Reload the table after deletion
+                    searchCategory();
+                    loadCategoryList("category");
+                },
+                error: function (error) {
+                    // Handle the error here
+                    console.log(error);
+                }
+            });
+        });
+
+        loadCategoryList("category");
 
     });
 </script>

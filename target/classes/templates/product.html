@@ -32,5 +32,284 @@
 
 <h2>Product</h2>
 
+<!-- Modal for Product Operations -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <!-- Employee Creation Form -->
+                <form id="productForm" method="post">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="name" name="name" required placeholder="名稱">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="description" name="description" required placeholder="敘述">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="price" name="price" required placeholder="價格">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="stock_quantity" name="stock_quantity" required placeholder="數量">
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="image_url" name="image_url" required placeholder="圖片位址">
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-select" id="category" name="category">
+                            <option value="">選擇分類</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="createProductBtn">新增</button>
+                </form>
+
+
+                <!-- Product Search Form -->
+
+                <form id="searchForm" class="mt-4">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="searchName" name="name" placeholder="名稱">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="searchBtn">查詢</button>
+                </form>
+
+                <div id="tableContainer" class="mt-4"></div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- creation -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+
+        function loadCategoryList(dropdownId) {
+            $.ajax({
+                url: "/category-list",
+                method: "GET",
+                success: function (data) {
+                    // Populate the dropdown with roles
+                    var roleDropdown = $("#" + dropdownId);
+                    roleDropdown.empty();
+                    roleDropdown.append($('<option value="">選擇分類</option>'));
+                    $.each(data, function (index, category) {
+                        roleDropdown.append($('<option value="' + category.category_id + '">' + category.name + '</option>'));
+                    });
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+
+        function loadProductTable(ProductWithCategories) {
+            // Clear previous table
+            $("#tableContainer").empty();
+
+            // Create a new table
+            var table = $("<table>").addClass("table table-bordered table-hover");
+            var thead = $("<thead>").appendTo(table);
+            var trHead = $("<tr>").appendTo(thead);
+            $("<th>").text("ID").appendTo(trHead);
+            $("<th>").text("名稱").appendTo(trHead);
+            $("<th>").text("產品描述").appendTo(trHead);
+            $("<th>").text("價格").appendTo(trHead);
+            $("<th>").text("數量").appendTo(trHead);
+            $("<th>").text("產品圖片").appendTo(trHead);
+            $("<th>").text("圖片位址").appendTo(trHead);
+            $("<th>").text("產品類別").appendTo(trHead);
+            $("<th>").text("建立時間").appendTo(trHead);
+            $("<th>").text("更新時間").appendTo(trHead);
+            $("<th>").text("操作").appendTo(trHead);
+
+            var tbody = $("<tbody>").appendTo(table);
+            $.each(ProductWithCategories, function (index, productWithCategory) {
+                var tr = $("<tr>").appendTo(tbody);
+                console.log(productWithCategory)
+                $("<td>").text(productWithCategory.products.product_id).appendTo(tr);
+
+                var nameInput = $("<input>").attr("type", "text")
+                    .attr("id", "nameInput_" + productWithCategory.products.product_id)
+                    .val(productWithCategory.products.name);
+                var descriptionInput = $("<input>").attr("type", "text")
+                    .attr("id", "descriptionInput_" + productWithCategory.products.product_id)
+                    .val(productWithCategory.products.description);
+                var priceInput = $("<input>").attr("type", "text")
+                    .attr("id", "priceInput_" + productWithCategory.products.product_id)
+                    .val(productWithCategory.products.price);
+                var quantityInput = $("<input>").attr("type", "text")
+                    .attr("id", "quantityInput_" + productWithCategory.products.product_id)
+                    .val(productWithCategory.products.stock_quantity);
+                var imageInput = $("<input>").attr("type", "text")
+                    .attr("id", "imageInput_" + productWithCategory.products.product_id)
+                    .val(productWithCategory.products.image_url);
+                var image = $("<img>").attr("th:src", productWithCategory.products.image_url)
+                           .attr("id", "image_" + productWithCategory.products.product_id);
+                $("<td>").append(nameInput).appendTo(tr);
+                $("<td>").append(descriptionInput).appendTo(tr);
+                $("<td>").append(priceInput).appendTo(tr);
+                $("<td>").append(quantityInput).appendTo(tr);
+                $("<td>").append(image).appendTo(tr);
+                $("<td>").append(imageInput).appendTo(tr);
+
+                // Create a category dropdown
+                var categoryDDL = $("<select>").addClass("form-select");
+                categoryDDL.attr("id", "categorySelect_" + productWithCategory.products.product_id)
+                    .attr("data-product-id", productWithCategory.products.product_id);
+
+                loadCategoryList("categorySelect_" + productWithCategory.products.product_id);
+
+                // Set the selected category for the dropdown
+                //categoryDDL.val(productWithCategory.category != null ? productWithCategory.category.category_id : "").change();
+                console.log("category :", (productWithCategory.category != null ? productWithCategory.category.category_id : ""));
+
+
+                // Append the category dropdown to the table cell
+                $("<td>").append(categoryDDL).appendTo(tr);
+                console.log("Setting selected category:", (productWithCategory.category != null ? productWithCategory.category.category_id : ""));
+
+                $("<td>").text(productWithCategory.products.created_at).appendTo(tr);
+                $("<td>").text(productWithCategory.products.updated_at).appendTo(tr);
+
+                var tdButtons = $("<td>").appendTo(tr);
+
+                $("<button>").text("修改").addClass("btn btn-sm btn-warning edit-btn")
+                    .attr("data-product-id", productWithCategory.products.product_id).appendTo(tdButtons);
+                $("<button>").text("刪除").addClass("btn btn-sm btn-danger delete-btn")
+                    .attr("data-product-id", productWithCategory.products.product_id).appendTo(tdButtons);
+            });
+            // Append the table to the container
+            table.appendTo("#tableContainer");
+        }
+
+        $("#createProductBtn").click(function () {
+            var productData = {
+                name: $("#name").val(),
+                description: $("#description").val(),
+                price: $("#price").val(),
+                stock_quantity: $("#stock_quantity").val(),
+                image_url: $("#image_url").val()
+            };
+
+            var selectedCategoryId = $("#category").val(); // Get selected category ID
+            if (selectedCategoryId !== "") {
+
+                $.ajax({
+                    url: "/product_category",
+                    method: "POST",
+                    data: JSON.stringify({
+                        productData: productData,
+                        selectedCategoryId: parseInt(selectedCategoryId)
+                    }),
+                    contentType: "application/json",
+                    success: function (data) {
+                        // Handle the response data here
+                        console.log(data);
+                        loadProductTable(data);
+                    },
+                    error: function (error) {
+                        // Handle the error here
+                        console.log(error);
+                    }
+                });
+            }
+            else {
+                $.ajax({
+                    url: "/product",
+                    method: "POST",
+                    data: productData,
+                    success: function (data) {
+                        // Handle the response data here
+                        console.log(data);
+                        loadProductTable(data);
+                    },
+                    error: function (error) {
+                        // Handle the error here
+                        console.log(error);
+                    }
+                });
+            }
+        });
+
+        $("#searchBtn").click(function () {
+        var searchName = $("#searchName").val();
+        $.ajax({
+            url: "/search-product",
+            method: "GET",
+            data: { name: searchName },
+            success: function (data) {
+                // Load product table using the defined function
+                loadProductTable(data);
+                //loadCategoryList();
+            },
+            error: function (error) {
+                // Handle the error here
+                console.log(error);
+            }
+        });
+    });
+
+    $(document).on("click", ".edit-btn", function () {
+        var productId = $(this).data("product-id");
+
+        var name = $("#nameInput_" + productId).val();
+        var description = $("#descriptionInput_" + productId).val();
+        var price = $("priceInput_" + productId).val();
+        var stock_quantity = $("#quantityInput_" + productId).val();
+        var image_url = $("#imageInput_" + productId).val();
+        var selectedCategoryId = $("#categorySelect_" + productId).val();
+
+        // Send the updated data to the server using the PUT request
+        $.ajax({
+            url: "/product/" + productId,
+            method: "PUT",
+            data: JSON.stringify({
+                name: name,
+                description: description,
+                price: price,
+                stock_quantity: stock_quantity,
+                image_url: image_url,
+                selectedCategoryId: parseInt(selectedCategoryId)
+            }),
+            contentType: "application/json",
+            success: function (data) {
+                // Handle the response data here
+                console.log(data);
+                $("#searchBtn").trigger("click");
+            },
+            error: function (error) {
+                // Handle the error here
+                console.log(error);
+            }
+        });
+    });
+
+    $(document).on("click", ".delete-btn", function () {
+        var productId = $(this).data("product-id");
+
+        $.ajax({
+            url: "/product/" + productId,
+            method: "DELETE",
+            success: function (data) {
+                // Handle success, update UI or perform actions
+                console.log("Product deleted");
+                loadProductTable(data);
+                // You might want to update the UI to reflect the change in status
+            },
+            error: function (error) {
+               // Handle the error here
+               console.log(error);
+            }
+        });
+    });
+
+    // Load role list for the dropdown when the page loads
+    loadCategoryList("category")
+
+    });
+</script>
+
 </body>
 </html>

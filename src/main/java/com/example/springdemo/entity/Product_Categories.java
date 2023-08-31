@@ -15,7 +15,7 @@ public class Product_Categories {
     @Id
     @NonNull
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int product_category_id;
+    private Integer product_category_id;
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "product_id", referencedColumnName = "product_id")
     private Products products;
@@ -26,4 +26,9 @@ public class Product_Categories {
     private Date created_at;
     @UpdateTimestamp
     private Date updated_at;
+
+    public Product_Categories(Products product, Categories categories) {
+        this.products = product;
+        this.categories = categories;
+    }
 }
